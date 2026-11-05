@@ -1595,10 +1595,10 @@ body:has(.is-desktop) {
   background: #c42b1c;
 }
 
-/* Page thumbnails and PDF outline */
+/* Page thumbnails, PDF outline, and reading bookmarks */
 .sidebar-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 3px;
   margin: 5px 13px 6px;
   padding: 3px;
@@ -1626,12 +1626,111 @@ body:has(.is-desktop) {
   box-shadow: 0 1px 4px var(--shadow);
 }
 
-.outline-list {
+.outline-list,
+.bookmark-list {
   flex: 1 1 auto;
   min-height: 0;
   padding: 6px 9px 16px;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+.bookmark-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px 10px 16px;
+}
+
+.bookmark-item {
+  position: relative;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--hover);
+  transition: border-color 150ms ease, background 150ms ease;
+}
+
+.bookmark-item:hover,
+.bookmark-item.current {
+  border-color: rgba(185, 95, 54, 0.3);
+  background: var(--accent-soft);
+}
+
+.bookmark-jump {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  padding: 11px 30px 11px 11px;
+  border: 0;
+  border-radius: inherit;
+  color: var(--text-soft);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.bookmark-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.bookmark-excerpt {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 9px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+}
+
+.bookmark-delete {
+  position: absolute;
+  top: 7px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 23px;
+  height: 23px;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  color: var(--muted);
+  background: transparent;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease;
+}
+
+.bookmark-delete:hover {
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.bookmark-empty {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 55px 14px 0;
+  color: var(--faint);
+  text-align: center;
+}
+
+.bookmark-empty strong {
+  margin: 13px 0 6px;
+  color: var(--text-soft);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+.bookmark-empty span {
+  font-size: 8px;
+  line-height: 1.6;
 }
 
 .outline-row {

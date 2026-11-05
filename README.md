@@ -5,13 +5,13 @@
 
   **通透阅读，专注当下。**
 
-  一款本地运行的 Windows PDF 阅读器，支持 PDF 目录、窗口半透明、夜间模式和窗口始终置顶。
+  一款本地运行的 Windows PDF 阅读器，支持阅读书签、PDF 目录、窗口半透明、夜间模式和窗口始终置顶。
 
   [![Release](https://img.shields.io/github/v/release/DFYX233/ArcReader)](https://github.com/DFYX233/ArcReader/releases)
   [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-blue)](#安装)
   [![Tech](https://img.shields.io/badge/React-Electron-orange)](#技术栈)
 
-  **[下载 Windows 安装程序](https://github.com/DFYX233/ArcReader/releases/download/v1.1.1/ArcReader-Setup.exe)** · **[查看 Release](https://github.com/DFYX233/ArcReader/releases/tag/v1.1.1)**
+  **[下载 Windows 安装程序](https://github.com/DFYX233/ArcReader/releases/download/v1.2.0/ArcReader-Setup.exe)** · **[查看 Release](https://github.com/DFYX233/ArcReader/releases/tag/v1.2.0)**
 
   <img src="docs/images/reader-day.png" alt="ArcReader 日间阅读界面" />
 </div>
@@ -20,7 +20,8 @@
 
 ### 阅读与导航
 
-- **PDF 多级目录**：读取文档自带的书签目录，支持展开、收起和点击跳页。
+- **阅读书签**：按 `B` 收藏当前页，保存页面文字摘要，支持跳转和删除；每份 PDF 独立保存并在重启后恢复。
+- **PDF 多级目录**：读取文档自带的目录，支持展开、收起和点击跳页。
 - **页面缩略图**：快速浏览并定位到指定页面。
 - **连续阅读**：支持滚动阅读、页码跳转、缩放和适应页面宽度。
 - **全文搜索**：搜索 PDF 文字内容，并跳转到匹配页面。
@@ -47,6 +48,10 @@
 
 ![ArcReader 夜间阅读界面](docs/images/reader-night.png)
 
+### 阅读书签
+
+![阅读书签、页面摘要与跳转](docs/images/reader-bookmarks.png)
+
 ### 窗口与阅读外观设置
 
 ![窗口半透明、始终置顶与夜间模式设置](docs/images/reader-settings.png)
@@ -60,7 +65,7 @@
 
 ### 安装步骤
 
-1. 下载 **[ArcReader-Setup.exe](https://github.com/DFYX233/ArcReader/releases/download/v1.1.1/ArcReader-Setup.exe)**。
+1. 下载 **[ArcReader-Setup.exe](https://github.com/DFYX233/ArcReader/releases/download/v1.2.0/ArcReader-Setup.exe)**。
 2. 双击安装程序，按照提示完成安装。
 3. 通过桌面快捷方式启动 ArcReader，或直接双击一个 PDF 文件。
 
@@ -82,7 +87,14 @@
 
 ### 查看目录
 
-打开 PDF 后，在左侧选择 **“目录”**。如果文档包含书签目录，可以点击条目直接跳转；如果 PDF 本身没有目录，会显示相应提示，仍可切换回“页面”使用缩略图。
+打开 PDF 后，在左侧选择 **“目录”**。如果文档包含目录，可以点击条目直接跳转；如果 PDF 本身没有目录，会显示相应提示，仍可切换回“页面”使用缩略图。
+
+### 使用阅读书签
+
+- 阅读到需要标记的页面时，点击顶部**书签按钮**或按 **`B`**；再次点击或按 **`B`** 可取消当前页书签。
+- 在左侧选择 **“书签”**，点击书签即可跳转到对应页面，点击右侧 **×** 可删除。
+- 书签会保存页面文字摘要；扫描版 PDF 没有文字层时，会显示页码作为摘要。
+- 每份 PDF 的书签独立保存在本机，关闭并重新打开应用后仍会保留。清除应用数据会同时清除书签。
 
 ### 窗口半透明与置顶
 
@@ -99,6 +111,7 @@
 | `←` / `→` | 上一页 / 下一页 |
 | `+` / `-` | 放大 / 缩小 |
 | `0` | 适应页面宽度 |
+| `B` | 添加 / 删除当前页书签 |
 | `N` | 切换日间 / 夜间模式 |
 | `T` | 切换窗口半透明 |
 | `P` | 切换窗口始终置顶 |
@@ -171,10 +184,10 @@ ArcReader/
 
 ## 隐私说明
 
-ArcReader 不提供云端文档服务。你打开的 PDF 仅通过本地文件读取和 PDF.js 渲染，文档内容不会上传到本仓库、GitHub 或其他服务器。窗口透明度、主题和置顶等偏好仅保存在本机。
+ArcReader 不提供云端文档服务。你打开的 PDF 仅通过本地文件读取和 PDF.js 渲染，文档内容不会上传到本仓库、GitHub 或其他服务器。阅读书签、窗口透明度、主题和置顶等偏好仅保存在本机。
 
 ## 当前版本
 
-**v1.1.1**：修复无目录 PDF 无法打开的问题，并通过正文与缩略图按需渲染优化数百页大型文档的加载性能。包含 PDF 多级目录、窗口半透明、窗口始终置顶、夜间模式、PDF 双击打开和右键菜单。
+**v1.2.0**：新增按文档独立保存的阅读书签，支持 `B` 键收藏、页面摘要、跳转、删除和重启恢复。包含 PDF 多级目录、窗口半透明、窗口始终置顶、夜间模式、PDF 双击打开和右键菜单，并保留大型 PDF 按需渲染优化。
 
 完整更新与安装包请查看 **[Releases](https://github.com/DFYX233/ArcReader/releases)**。

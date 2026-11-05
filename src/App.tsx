@@ -13,6 +13,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {
   BookOpen,
+  Bookmark,
+  BookmarkCheck,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -49,6 +51,24 @@ interface SearchResult {
   snippet: string;
 }
 
+interface BookmarkItem {
+  id: string;
+  page: number;
+  excerpt: string;
+  createdAt: number;
+}
+
+type BookmarkStore = Record<string, BookmarkItem[]>;
+
+function loadBookmarkStore(): BookmarkStore {
+  try {
+    const value = JSON.parse(localStorage.getItem('arcreader-bookmarks-v1') || '{}');
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  } catch {
+    return {};
+  }
+}
+
 const SAMPLE_NAME = 'ArcReader · 通透阅读指南.pdf';
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
@@ -62,14 +82,16 @@ export default function App() {
   const [doc, setDoc] = useState<PDFDocumentProxy | null>(null);
   const [fileName, setFileName] = useState(SAMPLE_NAME);
   const [fileSize, setFileSize] = useState(0);
+  const [documentPath, setDocumentPath] = useState('');
   const [numPages, setNumPages] = useState(0);
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1.05);
   const [fitMode, setFitMode] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [sidebarTab, setSidebarTab] = useState<'pages' | 'outline'>('pages');
+  const [sidebarTab, setSidebarTab] = useState<'pages' | 'outline' | 'bookmarks'>('pages');
   const [outline, setOutline] = useState<PdfOutlineItem[]>([]);
+  const [bookmarksByDoc, setBookmarksByDoc] = useState<BookmarkStore>(loadBookmarkStore);
   const [nightMode, setNightMode] = useState(() => localStorage.getItem('arcreader-theme') === 'night');
   const [transparentMode, setTransparentMode] = useState(() => localStorage.getItem('arcreader-transparent') !== 'false');
   const [opacity, setOpacity] = useState(() => Number(localStorage.getItem('arcreader-opacity') || 76));
@@ -94,10 +116,19 @@ export default function App() {
   const scrollFrame = useRef<number | null>(null);
   const initialized = useRef(false);
   const loadSequence = useRef(0);
+  const bookmarkPending = useRef(false);
+
+  const documentKey = doc
+    ? documentPath
+      ? `path:${documentPath.replace(/\//g, '\\').toLowerCase()}`
+      : `file:${fileName}|${fileSize}|${numPages}`
+    : '';
+  const bookmarks = documentKey ? bookmarksByDoc[documentKey] ?? [] : [];
+  const currentPageBookmarked = bookmarks.some((item) => item.page === pageNumber);
 
   const showToast = useCallback((message: string) => setToast(message), []);
 
-  const loadDocument = useCallback(async (source: ArrayBuffer, name: string, size: number) => {
+  const loadDocument = useCallback(async (source: ArrayBuffer, name: string, size: number, filePath = '') => {
     const requestId = ++loadSequence.current;
     setLoading(true);
     setAppearanceOpen(false);
@@ -116,6 +147,7 @@ export default function App() {
       setSidebarTab('pages');
       setFileName(name);
       setFileSize(size);
+      setDocumentPath(filePath);
       setNumPages(nextDoc.numPages);
       setPageNumber(1);
       setScale(1.05);
@@ -163,7 +195,7 @@ export default function App() {
       return;
     }
     void desktop.getInitialFile().then((file) => {
-      if (file) return loadDocument(file.data, file.name, file.size);
+      if (file) return loadDocument(file.data, file.name, file.size, file.path);
       return loadSample();
     }).catch((error) => {
       console.error('启动文件读取失败:', error);
@@ -175,6 +207,15 @@ export default function App() {
     localStorage.setItem('arcreader-theme', nightMode ? 'night' : 'day');
     document.documentElement.style.colorScheme = nightMode ? 'dark' : 'light';
   }, [nightMode]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('arcreader-bookmarks-v1', JSON.stringify(bookmarksByDoc));
+    } catch (error) {
+      console.error('书签保存失败:', error);
+      showToast('书签保存失败，本地存储空间不足');
+    }
+  }, [bookmarksByDoc, showToast]);
 
   useEffect(() => {
     localStorage.setItem('arcreader-transparent', String(transparentMode));
@@ -205,7 +246,7 @@ export default function App() {
     const desktop = window.arcDesktop;
     if (!desktop) return;
     return desktop.onOpenFile((file) => {
-      void loadDocument(file.data, file.name, file.size).then(() => showToast(`已打开 ${file.name}`));
+      void loadDocument(file.data, file.name, file.size, file.path).then(() => showToast(`已打开 ${file.name}`));
     });
   }, [loadDocument, showToast]);
 
@@ -217,7 +258,7 @@ export default function App() {
     }
     void desktop.openPdf().then(async (file) => {
       if (!file) return;
-      await loadDocument(file.data, file.name, file.size);
+      await loadDocument(file.data, file.name, file.size, file.path);
       showToast(`已打开 ${file.name}`);
     }).catch((error) => {
       console.error('原生文件对话框打开失败:', error);
@@ -257,6 +298,57 @@ export default function App() {
       viewer.scrollTo({ top: Math.max(0, element.offsetTop - 28), behavior: smooth ? 'smooth' : 'auto' });
     }
   }, []);
+
+  const toggleBookmark = useCallback(async () => {
+    if (!doc || !documentKey || bookmarkPending.current) return;
+    const existing = bookmarks.find((item) => item.page === pageNumber);
+    if (existing) {
+      setBookmarksByDoc((current) => ({
+        ...current,
+        [documentKey]: (current[documentKey] ?? []).filter((item) => item.id !== existing.id),
+      }));
+      showToast(`已删除第 ${pageNumber} 页书签`);
+      return;
+    }
+
+    bookmarkPending.current = true;
+    const targetPage = pageNumber;
+    try {
+      const pdfPage = await doc.getPage(targetPage);
+      const content = await pdfPage.getTextContent();
+      const text = content.items
+        .map((item) => ('str' in item ? item.str : ''))
+        .join(' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+      const bookmark: BookmarkItem = {
+        id: `${Date.now()}-${targetPage}`,
+        page: targetPage,
+        excerpt: text ? `${text.slice(0, 80)}${text.length > 80 ? '…' : ''}` : `第 ${targetPage} 页书签`,
+        createdAt: Date.now(),
+      };
+      setBookmarksByDoc((current) => ({
+        ...current,
+        [documentKey]: [...(current[documentKey] ?? []).filter((item) => item.page !== targetPage), bookmark]
+          .sort((a, b) => a.page - b.page),
+      }));
+      showToast(`已添加第 ${targetPage} 页书签`);
+    } catch (error) {
+      console.error('书签添加失败:', error);
+      showToast('书签添加失败，请重试');
+    } finally {
+      bookmarkPending.current = false;
+    }
+  }, [bookmarks, doc, documentKey, pageNumber, showToast]);
+
+  const removeBookmark = useCallback((id: string) => {
+    if (!documentKey) return;
+    setBookmarksByDoc((current) => ({
+      ...current,
+      [documentKey]: (current[documentKey] ?? []).filter((item) => item.id !== id),
+    }));
+    showToast('已删除书签');
+  }, [documentKey, showToast]);
 
   const goToOutline = useCallback(async (item: PdfOutlineItem) => {
     const document = docRef.current;
@@ -408,6 +500,9 @@ export default function App() {
         changeZoom(-0.1);
       } else if (key === '0') {
         fitWidth();
+      } else if (key === 'b') {
+        event.preventDefault();
+        void toggleBookmark();
       } else if (key === 'n') {
         setNightMode((current) => !current);
       } else if (key === 't') {
@@ -424,7 +519,7 @@ export default function App() {
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [changeZoom, fitWidth, goToPage, openFilePicker, pageNumber]);
+  }, [changeZoom, fitWidth, goToPage, openFilePicker, pageNumber, toggleBookmark]);
 
   const rootStyle = {
     '--paper-opacity': transparentMode ? opacity / 100 : 1,
@@ -509,6 +604,15 @@ export default function App() {
 
         <div className="top-actions">
           <button
+            className={`icon-button ${currentPageBookmarked ? 'active' : ''}`}
+            onClick={() => void toggleBookmark()}
+            disabled={!doc}
+            aria-pressed={currentPageBookmarked}
+            title={currentPageBookmarked ? '删除当前页书签（B）' : '添加书签（B）'}
+          >
+            {currentPageBookmarked ? <BookmarkCheck size={18} /> : <Bookmark size={18} />}
+          </button>
+          <button
             className={`icon-button ${searchOpen ? 'active' : ''}`}
             onClick={() => { setSearchOpen((current) => !current); setAppearanceOpen(false); }}
             title="搜索文档（Ctrl+F）"
@@ -559,7 +663,12 @@ export default function App() {
         {!focusMode && (
           <aside className={`thumbnail-sidebar ${sidebarOpen ? '' : 'collapsed'}`}>
             <div className="sidebar-heading">
-              {sidebarOpen && <div><span>{sidebarTab === 'pages' ? '文档页面' : '文档目录'}</span><small>{sidebarTab === 'pages' ? `${numPages} PAGES` : `${outline.length} SECTIONS`}</small></div>}
+              {sidebarOpen && (
+                <div>
+                  <span>{sidebarTab === 'pages' ? '文档页面' : sidebarTab === 'outline' ? '文档目录' : '我的书签'}</span>
+                  <small>{sidebarTab === 'pages' ? `${numPages} PAGES` : sidebarTab === 'outline' ? `${outline.length} SECTIONS` : `${bookmarks.length} SAVED`}</small>
+                </div>
+              )}
               <button className="icon-button compact" onClick={() => setSidebarOpen((current) => !current)} title={sidebarOpen ? '收起侧栏' : '展开侧栏'}>
                 {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
               </button>
@@ -573,8 +682,9 @@ export default function App() {
                 <div className="sidebar-tabs">
                   <button className={sidebarTab === 'pages' ? 'active' : ''} onClick={() => setSidebarTab('pages')}><BookOpen size={13} />页面</button>
                   <button className={sidebarTab === 'outline' ? 'active' : ''} onClick={() => setSidebarTab('outline')}><ListTree size={13} />目录</button>
+                  <button className={sidebarTab === 'bookmarks' ? 'active' : ''} onClick={() => setSidebarTab('bookmarks')}><Bookmark size={13} />书签</button>
                 </div>
-                {sidebarTab === 'pages' ? (
+                {sidebarTab === 'pages' && (
                   <div className="thumbnail-list">
                     {doc && Array.from({ length: numPages }, (_, index) => index + 1).map((page) => (
                       <Thumbnail
@@ -588,12 +698,35 @@ export default function App() {
                       />
                     ))}
                   </div>
-                ) : (
+                )}
+                {sidebarTab === 'outline' && (
                   <div className="outline-list">
                     {outline.length ? (
                       <OutlineTree items={outline} onSelect={(item) => void goToOutline(item)} />
                     ) : (
                       <div className="outline-empty"><ListTree size={25} /><strong>这份 PDF 没有目录</strong><span>你仍然可以使用页面缩略图浏览</span></div>
+                    )}
+                  </div>
+                )}
+                {sidebarTab === 'bookmarks' && (
+                  <div className="bookmark-list">
+                    {bookmarks.length ? bookmarks.map((item) => (
+                      <div className={`bookmark-item ${item.page === pageNumber ? 'current' : ''}`} key={item.id}>
+                        <button className="bookmark-jump" onClick={() => goToPage(item.page)} title={`跳转到第 ${item.page} 页`}>
+                          <span className="bookmark-page"><Bookmark size={12} />第 {item.page} 页</span>
+                          <span className="bookmark-excerpt">{item.excerpt}</span>
+                        </button>
+                        <button
+                          className="bookmark-delete"
+                          onClick={() => removeBookmark(item.id)}
+                          aria-label={`删除第 ${item.page} 页书签`}
+                          title={`删除第 ${item.page} 页书签`}
+                        >
+                          <X size={13} />
+                        </button>
+                      </div>
+                    )) : (
+                      <div className="bookmark-empty"><Bookmark size={25} /><strong>还没有书签</strong><span>阅读时按 B 添加当前页</span></div>
                     )}
                   </div>
                 )}
@@ -774,7 +907,7 @@ export default function App() {
               <button className={`switch ${focusMode ? 'on' : ''}`} onClick={() => setFocusMode((current) => !current)} role="switch" aria-checked={focusMode}><span /></button>
             </div>
           </div>
-          <div className="shortcut-note"><Keyboard size={15} /><span><kbd>N</kbd> 夜间　<kbd>T</kbd> 透明　{window.arcDesktop && <><kbd>P</kbd> 置顶　</>}<kbd>F</kbd> 专注</span></div>
+          <div className="shortcut-note"><Keyboard size={15} /><span><kbd>B</kbd> 书签　<kbd>N</kbd> 夜间　<kbd>T</kbd> 透明　{window.arcDesktop && <><kbd>P</kbd> 置顶　</>}<kbd>F</kbd> 专注</span></div>
         </aside>
       )}
 

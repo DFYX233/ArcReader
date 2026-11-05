@@ -1,5 +1,6 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { mkdir, rm } from 'node:fs/promises';
 import { _electron as electron } from 'playwright';
 
 const pdfArgument = process.argv[2];
@@ -11,6 +12,10 @@ if (!pdfArgument) {
 const pdfPath = path.resolve(pdfArgument);
 const expectedTitle = path.basename(pdfPath, path.extname(pdfPath));
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const artifacts = path.join(root, 'artifacts');
+const profile = path.join(artifacts, 'large-pdf-test-profile');
+await mkdir(artifacts, { recursive: true });
+await rm(profile, { recursive: true, force: true });
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 const started = Date.now();
@@ -19,7 +24,7 @@ try {
   const executablePath = process.env.ARC_READER_EXECUTABLE;
   app = await electron.launch({
     ...(executablePath ? { executablePath } : {}),
-    args: executablePath ? [pdfPath] : ['.', pdfPath],
+    args: executablePath ? [pdfPath, `--user-data-dir=${profile}`] : ['.', pdfPath, `--user-data-dir=${profile}`],
     cwd: root,
     env,
   });
@@ -47,4 +52,5 @@ try {
   console.log(JSON.stringify({ status: 'passed', expectedPages, documentMs, firstCanvasMs, initialThumbnailCanvases, lastPage }, null, 2));
 } finally {
   if (app) await app.close();
+  await rm(profile, { recursive: true, force: true });
 }

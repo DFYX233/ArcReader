@@ -1,20 +1,22 @@
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { copyFile, mkdir, rm } from 'node:fs/promises';
 import { _electron as electron } from 'playwright';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const artifacts = path.join(root, 'artifacts');
 await mkdir(artifacts, { recursive: true });
 const testPdf = path.join(artifacts, '桌面双击测试.pdf');
+const profile = path.join(artifacts, 'desktop-test-profile');
 await copyFile(path.join(root, 'public', 'sample.pdf'), testPdf);
+await rm(profile, { recursive: true, force: true });
 
 let app;
 try {
   const electronEnv = { ...process.env };
   delete electronEnv.ELECTRON_RUN_AS_NODE;
   app = await electron.launch({
-    args: ['.', testPdf],
+    args: ['.', testPdf, `--user-data-dir=${profile}`],
     cwd: root,
     env: electronEnv,
   });
@@ -90,4 +92,5 @@ try {
   }, null, 2));
 } finally {
   if (app) await app.close();
+  await rm(profile, { recursive: true, force: true });
 }
