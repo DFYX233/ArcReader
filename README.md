@@ -11,7 +11,7 @@
   [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-blue)](#安装)
   [![Tech](https://img.shields.io/badge/React-Electron-orange)](#技术栈)
 
-  **[下载 Windows 安装程序](https://github.com/DFYX233/ArcReader/releases/download/v1.2.0/ArcReader-Setup.exe)** · **[查看 Release](https://github.com/DFYX233/ArcReader/releases/tag/v1.2.0)**
+  **[下载 Windows 安装程序](https://github.com/DFYX233/ArcReader/releases/download/v1.2.1/ArcReader-Setup.exe)** · **[查看 Release](https://github.com/DFYX233/ArcReader/releases/tag/v1.2.1)**
 
   <img src="docs/images/reader-day.png" alt="ArcReader 日间阅读界面" />
 </div>
@@ -21,6 +21,7 @@
 ### 阅读与导航
 
 - **阅读书签**：按 `B` 收藏当前页，保存页面文字摘要，支持跳转和删除；每份 PDF 独立保存并在重启后恢复。
+- **高清文字渲染**：普通显示器最低 2 倍像素渲染，高分屏最高 3 倍，并避免画布被 CSS 二次压缩；超大页面自动限制像素总量。
 - **PDF 多级目录**：读取文档自带的目录，支持展开、收起和点击跳页。
 - **页面缩略图**：快速浏览并定位到指定页面。
 - **连续阅读**：支持滚动阅读、页码跳转、缩放和适应页面宽度。
@@ -65,7 +66,7 @@
 
 ### 安装步骤
 
-1. 下载 **[ArcReader-Setup.exe](https://github.com/DFYX233/ArcReader/releases/download/v1.2.0/ArcReader-Setup.exe)**。
+1. 下载 **[ArcReader-Setup.exe](https://github.com/DFYX233/ArcReader/releases/download/v1.2.1/ArcReader-Setup.exe)**。
 2. 双击安装程序，按照提示完成安装。
 3. 通过桌面快捷方式启动 ArcReader，或直接双击一个 PDF 文件。
 
@@ -188,6 +189,6 @@ ArcReader 不提供云端文档服务。你打开的 PDF 仅通过本地文件�
 
 ## 当前版本
 
-**v1.2.0**：新增按文档独立保存的阅读书签，支持 `B` 键收藏、页面摘要、跳转、删除和重启恢复。包含 PDF 多级目录、窗口半透明、窗口始终置顶、夜间模式、PDF 双击打开和右键菜单，并保留大型 PDF 按需渲染优化。
+**v1.2.1**：修复 PDF 文字模糊问题。普通显示器最低使用 2 倍像素渲染，高分屏最高 3 倍；同时修正边框与画布尺寸不一致造成的二次缩放，并为超大页面限制渲染像素，保留大型 PDF 按需加载性能。包含阅读书签、目录、窗口半透明、夜间模式和窗口置顶。
 
 完整更新与安装包请查看 **[Releases](https://github.com/DFYX233/ArcReader/releases)**。

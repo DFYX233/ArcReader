@@ -660,13 +660,14 @@ button:disabled {
 
 .pdf-page {
   position: relative;
+  box-sizing: content-box;
   flex: 0 0 auto;
   overflow: visible;
   border: 1px solid var(--line);
   border-radius: 2px;
   background: rgba(var(--paper-rgb), var(--paper-opacity));
   box-shadow: 0 12px 35px var(--shadow), 0 2px 5px rgba(40, 35, 28, 0.05);
-  transition: width 180ms ease, height 180ms ease, background 200ms ease;
+  transition: background 200ms ease;
 }
 
 .is-transparent .pdf-page {

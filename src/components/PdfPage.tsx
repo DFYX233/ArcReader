@@ -50,7 +50,7 @@ const PdfPage = forwardRef<HTMLDivElement, PdfPageProps>(function PdfPage(
     doc.getPage(pageNumber).then((page) => {
       if (cancelled) return;
       const viewport = page.getViewport({ scale });
-      setDimensions({ width: viewport.width, height: viewport.height });
+      setDimensions({ width: Math.floor(viewport.width), height: Math.floor(viewport.height) });
     });
     return () => {
       cancelled = true;
@@ -69,16 +69,27 @@ const PdfPage = forwardRef<HTMLDivElement, PdfPageProps>(function PdfPage(
       if (!context) return;
 
       renderTaskRef.current?.cancel();
-      const pixelRatio = Math.min(window.devicePixelRatio || 1, 2);
-      const viewport = page.getViewport({ scale: scale * pixelRatio });
-      canvas.width = Math.floor(viewport.width);
-      canvas.height = Math.floor(viewport.height);
-      canvas.style.width = `${Math.floor(viewport.width / pixelRatio)}px`;
-      canvas.style.height = `${Math.floor(viewport.height / pixelRatio)}px`;
+      const viewport = page.getViewport({ scale });
+      const desiredScale = Math.min(3, Math.max(2, window.devicePixelRatio || 1));
+      const maxPixels = 16 * 1024 * 1024;
+      const maxDimension = 8192;
+      const outputScale = Math.max(1, Math.min(
+        desiredScale,
+        Math.sqrt(maxPixels / (viewport.width * viewport.height)),
+        maxDimension / viewport.width,
+        maxDimension / viewport.height,
+      ));
+
+      // Keep CSS size stable while rendering more physical pixels for sharp text.
+      canvas.width = Math.floor(viewport.width * outputScale);
+      canvas.height = Math.floor(viewport.height * outputScale);
+      canvas.style.width = `${Math.floor(viewport.width)}px`;
+      canvas.style.height = `${Math.floor(viewport.height)}px`;
 
       const task = page.render({
         canvasContext: context,
         viewport,
+        transform: outputScale === 1 ? undefined : [outputScale, 0, 0, outputScale, 0, 0],
         background: transparentMode ? 'rgba(255,255,255,0)' : '#ffffff',
       });
       renderTaskRef.current = task;
