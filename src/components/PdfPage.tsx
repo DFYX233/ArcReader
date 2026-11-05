@@ -45,6 +45,7 @@ const PdfPage = forwardRef<HTMLDivElement, PdfPageProps>(function PdfPage(
   }, [visible]);
 
   useEffect(() => {
+    if (!visible) return;
     let cancelled = false;
     doc.getPage(pageNumber).then((page) => {
       if (cancelled) return;
@@ -54,7 +55,7 @@ const PdfPage = forwardRef<HTMLDivElement, PdfPageProps>(function PdfPage(
     return () => {
       cancelled = true;
     };
-  }, [doc, pageNumber, scale]);
+  }, [doc, pageNumber, scale, visible]);
 
   useEffect(() => {
     if (!visible) return;

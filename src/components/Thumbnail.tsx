@@ -18,10 +18,33 @@ export default function Thumbnail({
   transparentMode,
   onClick,
 }: ThumbnailProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [ratio, setRatio] = useState(1.414);
+  const [visible, setVisible] = useState(pageNumber <= 2);
 
   useEffect(() => {
+    const element = buttonRef.current;
+    if (!element || visible) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setVisible(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '320px 0px' },
+    );
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [visible]);
+
+  useEffect(() => {
+    if (active) buttonRef.current?.scrollIntoView({ block: 'nearest' });
+  }, [active]);
+
+  useEffect(() => {
+    if (!visible) return;
     let cancelled = false;
     let renderTask: RenderTask | null = null;
 
@@ -42,23 +65,24 @@ export default function Thumbnail({
         background: transparentMode ? 'rgba(255,255,255,0)' : '#ffffff',
       });
       renderTask.promise.catch(() => undefined);
-    });
+    }).catch(() => undefined);
 
     return () => {
       cancelled = true;
       renderTask?.cancel();
     };
-  }, [doc, pageNumber, transparentMode]);
+  }, [doc, pageNumber, transparentMode, visible]);
 
   return (
     <button
+      ref={buttonRef}
       className={`thumbnail-item ${active ? 'active' : ''}`}
       onClick={onClick}
       aria-label={`跳转到第 ${pageNumber} 页`}
       aria-current={active ? 'page' : undefined}
     >
       <span className="thumbnail-paper" style={{ aspectRatio: `1 / ${ratio}` }}>
-        <canvas ref={canvasRef} className={nightMode ? 'night-canvas' : ''} />
+        {visible && <canvas ref={canvasRef} className={nightMode ? 'night-canvas' : ''} />}
       </span>
       <span className="thumbnail-number">{String(pageNumber).padStart(2, '0')}</span>
     </button>

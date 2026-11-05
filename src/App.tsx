@@ -106,7 +106,6 @@ export default function App() {
     setOutline([]);
     try {
       const nextDoc = await pdfjsLib.getDocument({ data: new Uint8Array(source.slice(0)) }).promise;
-      const nextOutline = await nextDoc.getOutline().catch(() => []) as PdfOutlineItem[];
       if (requestId !== loadSequence.current) {
         void nextDoc.destroy();
         return;
@@ -114,8 +113,7 @@ export default function App() {
       const previousDoc = docRef.current;
       docRef.current = nextDoc;
       setDoc(nextDoc);
-      setOutline(nextOutline);
-      setSidebarTab(nextOutline.length ? 'outline' : 'pages');
+      setSidebarTab('pages');
       setFileName(name);
       setFileSize(size);
       setNumPages(nextDoc.numPages);
@@ -124,6 +122,16 @@ export default function App() {
       setFitMode(false);
       if (viewerRef.current) viewerRef.current.scrollTop = 0;
       if (previousDoc) void previousDoc.destroy();
+
+      // Outline loading is optional and must never block the document itself.
+      void nextDoc.getOutline().then((result) => {
+        if (requestId !== loadSequence.current) return;
+        const items = (Array.isArray(result) ? result : []) as PdfOutlineItem[];
+        setOutline(items);
+        if (items.length) setSidebarTab('outline');
+      }).catch(() => {
+        if (requestId === loadSequence.current) setOutline([]);
+      });
     } catch (error) {
       if (requestId === loadSequence.current) {
         console.error('PDF 加载失败:', error);

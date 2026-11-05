@@ -11,7 +11,7 @@
   [![Platform](https://img.shields.io/badge/platform-Windows%2010%20%2F%2011-blue)](#安装)
   [![Tech](https://img.shields.io/badge/React-Electron-orange)](#技术栈)
 
-  **[下载 Windows 安装程序](https://github.com/DFYX233/ArcReader/releases/download/v1.1.0/ArcReader-Setup.exe)** · **[查看 Release](https://github.com/DFYX233/ArcReader/releases/tag/v1.1.0)**
+  **[下载 Windows 安装程序](https://github.com/DFYX233/ArcReader/releases/download/v1.1.1/ArcReader-Setup.exe)** · **[查看 Release](https://github.com/DFYX233/ArcReader/releases/tag/v1.1.1)**
 
   <img src="docs/images/reader-day.png" alt="ArcReader 日间阅读界面" />
 </div>
@@ -60,7 +60,7 @@
 
 ### 安装步骤
 
-1. 下载 **[ArcReader-Setup.exe](https://github.com/DFYX233/ArcReader/releases/download/v1.1.0/ArcReader-Setup.exe)**。
+1. 下载 **[ArcReader-Setup.exe](https://github.com/DFYX233/ArcReader/releases/download/v1.1.1/ArcReader-Setup.exe)**。
 2. 双击安装程序，按照提示完成安装。
 3. 通过桌面快捷方式启动 ArcReader，或直接双击一个 PDF 文件。
 
@@ -175,6 +175,6 @@ ArcReader 不提供云端文档服务。你打开的 PDF 仅通过本地文件�
 
 ## 当前版本
 
-**v1.1.0**：PDF 多级目录、窗口半透明、窗口始终置顶、夜间模式、PDF 双击打开和右键菜单。
+**v1.1.1**：修复无目录 PDF 无法打开的问题，并通过正文与缩略图按需渲染优化数百页大型文档的加载性能。包含 PDF 多级目录、窗口半透明、窗口始终置顶、夜间模式、PDF 双击打开和右键菜单。
 
 完整更新与安装包请查看 **[Releases](https://github.com/DFYX233/ArcReader/releases)**。

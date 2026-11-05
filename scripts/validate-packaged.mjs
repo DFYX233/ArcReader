@@ -24,7 +24,7 @@ try {
     executable: 'release/win-unpacked/ArcReader.exe',
     openedByFileArgument: '桌面双击测试.pdf',
     pages: 6,
-    installer: 'release/ArcReader Setup 1.1.0.exe',
+    installer: 'release/ArcReader Setup 1.1.1.exe',
   }, null, 2));
 } finally {
   if (app) await app.close();
